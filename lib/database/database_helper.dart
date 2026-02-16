@@ -4,6 +4,64 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  Future<void> limpiarPapeleraAntigua() async {
+  final db = await database;
+  // Calculamos la fecha límite (hace 30 días)
+  final fechaLimite = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+  // Eliminamos físicamente los registros que marcaste como eliminados hace más de 30 días
+  await db.delete(
+    'inventarios',
+    where: 'eliminado = 1 AND fecha_eliminacion <= ?',
+    whereArgs: [fechaLimite],
+  );
+}
+
+Future<List<Map<String, dynamic>>> getInventariosEliminados() async {
+  final db = await database;
+
+  final fechaLimite = DateTime.now()
+      .subtract(const Duration(days: 30))
+      .toIso8601String();
+
+  return await db.query(
+    'inventarios',
+    where: 'eliminado = 1 AND fecha_eliminacion >= ?',
+    whereArgs: [fechaLimite],
+    orderBy: 'fecha_eliminacion DESC',
+  );
+}
+
+Future<void> restaurarInventario(int id) async {
+  final db = await database;
+  await db.update(
+    'inventarios',
+    {
+      'eliminado': 0,
+      'fecha_eliminacion': null,
+      'fechaActualizacion': DateTime.now().toIso8601String(),
+    },
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
+Future<void> eliminarInventarioDefinitivo(int id) async {
+  final db = await database;
+
+  await db.delete(
+    'articulos',
+    where: 'inventario_id = ?',
+    whereArgs: [id],
+  ); //Elimina articulos
+
+  await db.delete(
+    'inventarios',
+    where: 'id = ?',
+    whereArgs: [id],
+  ); //Elimina inventarios
+}
+
 
   DatabaseHelper._init();
 

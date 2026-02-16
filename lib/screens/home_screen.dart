@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'create_inventario_screen.dart';
 import 'buscar_inventario_screen.dart';
+import 'eliminados_screen.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -37,6 +39,21 @@ class HomeScreen extends StatelessWidget {
         },
         child: const Text("BUSCAR INVENTARIO"),
       ),
+    const SizedBox(height: 20),
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const InventariosEliminadosScreen(),
+      ),
+    );
+  },
+  child: const Text("DELETED"),
+),
+
+
     ],
   ),
 ),
