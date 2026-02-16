@@ -6,8 +6,8 @@ plugins {
 
 android {
     namespace = "com.example.mudanza_inventario"
-    compileSdk = 35 
-    buildToolsVersion = "35.0.0" // Esto mata el error 25.0.1
+    compileSdk = 36 
+    buildToolsVersion = "36.0.0" // Esto mata el error 25.0.1
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -21,7 +21,7 @@ android {
     defaultConfig {
         applicationId = "com.example.mudanza_inventario"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

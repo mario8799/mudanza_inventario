@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import 'add_item_screen.dart';
 import 'firma_operador_screen.dart';
-import '../services/pdf_service.dart';
 import '../models/articulo.dart';
 import '../services/printer_service.dart';
+// Importamos el nuevo generador con un alias para mayor claridad
+import '../services/pdf_generator_service.dart' as Generator;
 
 class InventarioScreen extends StatefulWidget {
   final int inventarioId;
@@ -35,13 +36,11 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Future<void> cargarEstadoInventario() async {
-  final inv = await DatabaseHelper.instance
-      .getInventarioById(widget.inventarioId);
-
-  setState(() {
-    inventarioCerrado = inv['cerrado'] == 1;
-  });
-}
+    final inv = await DatabaseHelper.instance.getInventarioById(widget.inventarioId);
+    setState(() {
+      inventarioCerrado = inv['cerrado'] == 1;
+    });
+  }
 
   // --- LÓGICA DE DATOS ---
 
@@ -68,68 +67,57 @@ class _InventarioScreenState extends State<InventarioScreen> {
       whereArgs: [widget.inventarioId],
       orderBy: 'correlativo ASC',
     );
-  final listaArticulos =
-    data.map((map) => Articulo.fromMap(map)).toList();
+    final listaArticulos = data.map((map) => Articulo.fromMap(map)).toList();
 
-  final hayHV =
-    listaArticulos.any((a) => a.isHighValue == 1);
+    final hayHV = listaArticulos.any((a) => a.isHighValue == 1);
 
     setState(() {
-    articulos = listaArticulos;
-    existeHighValue = hayHV;
+      articulos = listaArticulos;
+      existeHighValue = hayHV;
     });
   }
 
-Future<void> generarPdfHighValue() async {
-  final db = await DatabaseHelper.instance.database;
+  // --- NUEVA LÓGICA DE PDFS USANDO EL SERVICIO PÚBLICO ---
 
-  final hvArticulos = await db.query(
-    'articulos',
-    where: 'inventario_id = ? AND is_high_value = 1',
-    whereArgs: [widget.inventarioId],
-    orderBy: 'correlativo ASC',
-  );
+  Future<void> generarPdfHighValue() async {
+    await Generator.generarPdfHighValue(widget.inventarioId);
+  }
 
-  await PdfService.generarPdf(
-    inventario: inventarioData!,
-    articulos: hvArticulos,
+  Future<void> mostrarOpcionesPdf() async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), // Bordes redondeados
+  title: const Text("Tipo de Inventario"),
+  content: const Text("¿Este reporte corresponde a Equipo Profesional (ProGear)?"),
+  actions: [
+    TextButton(
+      onPressed: () {
+        Navigator.pop(context);
+        Generator.generarPdfCompleto(widget.inventarioId);
+      },
+      child: const Text("NO, NORMAL", style: TextStyle(color: Colors.grey)),
+    ),
+    ElevatedButton(
+      onPressed: () {
+        Navigator.pop(context);
+        Generator.generarPdfProGear(widget.inventarioId);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.orange.shade700, // Un naranja profesional
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: const Text("SÍ, ES PROGEAR"),
+    ),
+  ],
+);
+    },
   );
 }
 
-
-  Future<void> generarPdfInventario() async {
-    final db = await DatabaseHelper.instance.database;
-    final inventario = (await db.query(
-      'inventarios',
-      where: 'id = ?',
-      whereArgs: [widget.inventarioId],
-    )).first;
-
-    final articulosDb = await db.query(
-      'articulos',
-      where: 'inventario_id = ? AND eliminado = 0',
-      whereArgs: [widget.inventarioId],
-      orderBy: 'correlativo ASC',
-    );
-
-    final hvArticulos = await db.query(
-       'articulos',
-      where: 'inventario_id = ? AND is_high_value = 1',
-      whereArgs: [widget.inventarioId],
-      orderBy: 'correlativo ASC',
-    );
-
-      PdfService.generarPdf(
-       inventario: inventario,
-       articulos: hvArticulos,
-    );
-
-
-    await PdfService.generarPdf(
-      inventario: inventario,
-      articulos: articulosDb,
-    );
-  }
+  // --- UTILIDADES ---
 
   Future<int> obtenerSiguienteCorrelativo() async {
     final db = await DatabaseHelper.instance.database;
@@ -238,40 +226,35 @@ Future<void> generarPdfHighValue() async {
   }
 
   void mostrarConfirmacionCierre() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Confirmar cierre"),
-      content: const Text(
-        "¿Está seguro que desea cerrar este inventario?\n\nLuego no podrá modificar los artículos.",
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirmar cierre"),
+        content: const Text(
+          "¿Está seguro que desea cerrar este inventario?\n\nLuego no podrá modificar los artículos.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await DatabaseHelper.instance.cerrarInventario(widget.inventarioId);
+              if (mounted) {
+                setState(() {
+                  inventarioCerrado = true;
+                });
+              }
+              irAFirmaOperador();
+            },
+            child: const Text("Confirmar"),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancelar"),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            Navigator.pop(context);
-
-            await DatabaseHelper.instance
-                .cerrarInventario(widget.inventarioId);
-
-            if (mounted) {
-              setState(() {
-                inventarioCerrado = true;
-              });
-            }
-
-            irAFirmaOperador();
-          },
-          child: const Text("Confirmar"),
-        ),
-      ],
-    ),
-  );
-}
-
+    );
+  }
 
   Future<void> irAFirmaOperador() async {
     final resultado = await Navigator.push(
@@ -288,8 +271,6 @@ Future<void> generarPdfHighValue() async {
       setState(() {});
     }
   }
-
-  // --- WIDGETS AUXILIARES ---
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -340,7 +321,6 @@ Future<void> generarPdfHighValue() async {
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   elevation: 2,
                   child: ExpansionTile(
-                    // CABECERA: Código y Descripción breve
                     title: Text(
                       "${widget.numeroInventario}-${formatearCorrelativo(articulo.correlativo)}",
                       style: TextStyle(
@@ -369,7 +349,6 @@ Future<void> generarPdfHighValue() async {
                             ),
                           )
                         : null,
-                    // CONTENIDO DESPLEGABLE: Todo el detalle
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -382,10 +361,11 @@ Future<void> generarPdfHighValue() async {
                             _buildDetailRow("Estado", articulo.estado),
                             _buildDetailRow("Observaciones", articulo.observaciones),
                             const Divider(),
-                          Row(
+                            // --- Dentro del Row de botones de cada artículo ---
+Row(
   mainAxisAlignment: MainAxisAlignment.end,
   children: [
-    // IMPRIMIR siempre activo
+    // El botón de IMPRIMIR siempre debe ser visible
     TextButton.icon(
       onPressed: () async {
         await PrinterService.printArticulo(articulo);
@@ -393,33 +373,27 @@ Future<void> generarPdfHighValue() async {
       icon: const Icon(Icons.print, size: 18),
       label: const Text("Imprimir"),
     ),
-    const SizedBox(width: 10),
 
-    // EDITAR solo si no está cerrado
-    TextButton.icon(
-      onPressed: inventarioCerrado
-          ? null
-          : () => editarArticulo(articulo),
-      icon: const Icon(Icons.edit, size: 18),
-      label: const Text("Editar"),
-    ),
-    const SizedBox(width: 10),
-
-    // ELIMINAR solo si no está cerrado
-    TextButton.icon(
-      onPressed: inventarioCerrado
-          ? null
-          : () => confirmarEliminacion(articulo.id!),
-      icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-      label: const Text(
-        "Eliminar",
-        style: TextStyle(color: Colors.red),
+    // Solo si el inventario NO está cerrado, renderizamos Editar y Eliminar
+    if (!inventarioCerrado) ...[
+      const SizedBox(width: 10),
+      TextButton.icon(
+        onPressed: () => editarArticulo(articulo),
+        icon: const Icon(Icons.edit, size: 18),
+        label: const Text("Editar"),
       ),
-    ),
+      const SizedBox(width: 10),
+      TextButton.icon(
+        onPressed: () => confirmarEliminacion(articulo.id!),
+        icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+        label: const Text(
+          "Eliminar",
+          style: TextStyle(color: Colors.red),
+        ),
+      ),
+    ],
   ],
 ),
-
-
                           ],
                         ),
                       ),
@@ -429,40 +403,44 @@ Future<void> generarPdfHighValue() async {
               },
             ),
           ),
-          // --- BOTONES INFERIORES ---     
-
-         if (mostrarPdf && existeHighValue)
-  Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: generarPdfHighValue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-        ),
-        child: const Text(
-          "GENERAR HIGH VALUE",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-    ),
-  ),
- 
-          
-          if (mostrarPdf)
+          // --- BOTONES INFERIORES ---
+          if (mostrarPdf && existeHighValue)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: generarPdfInventario,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                  child: const Text("GENERAR PDF", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  onPressed: generarPdfHighValue,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    "GENERAR HIGH VALUE",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
+          if (mostrarPdf)
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        // Cambiamos la llamada directa por el diálogo
+        onPressed: mostrarOpcionesPdf, 
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue, 
+          foregroundColor: Colors.white
+        ),
+        child: const Text(
+          "GENERAR PDF", 
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+        ),
+      ),
+    ),
+  ),
           if (inventarioData == null || inventarioData!['activo'] == 1)
             Padding(
               padding: const EdgeInsets.all(16),

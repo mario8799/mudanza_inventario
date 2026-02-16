@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
-import '../services/pdf_generator_servide.dart';
+import '../services/pdf_generator_service.dart';
 
 class BuscarInventarioScreen extends StatefulWidget {
   const BuscarInventarioScreen({Key? key}) : super(key: key);
