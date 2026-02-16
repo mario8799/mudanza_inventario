@@ -11,6 +11,10 @@
     <!-- Si necesitas descubrimiento de dispositivos -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
 
+    <!-- Para guardar los PDFs -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+
+
     <application
         android:label="mudanza_inventario"
         android:name="${applicationName}"

@@ -105,7 +105,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
         Generator.generarPdfProGear(widget.inventarioId);
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red, // Un naranja profesional
+        backgroundColor: Colors.red,  // Un naranja profesional
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -368,8 +368,20 @@ Row(
     // El botón de IMPRIMIR siempre debe ser visible
     TextButton.icon(
       onPressed: () async {
-        await PrinterService.printArticulo(articulo);
-      },
+  final db = await DatabaseHelper.instance.database;
+
+  final inventario = (await db.query(
+    'inventarios',
+    where: 'id = ?',
+    whereArgs: [articulo.inventarioId],
+  )).first;
+
+  await PrinterService.printArticulo(
+    articulo: articulo,
+    inventario: inventario,
+  );
+},
+
       icon: const Icon(Icons.print, size: 18),
       label: const Text("Imprimir"),
     ),
