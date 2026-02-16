@@ -105,7 +105,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
         Generator.generarPdfProGear(widget.inventarioId);
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange.shade700, // Un naranja profesional
+        backgroundColor: Colors.red, // Un naranja profesional
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
