@@ -35,7 +35,7 @@ String generarNombreArchivo({
     etiqueta = "_PG";
   }
 
-  return "INV-$numero"
+  return "$numero"
       "_$nombre"
       "_$apellido"
       "_$fechaFormateada"
