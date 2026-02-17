@@ -26,6 +26,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
   bool existeHighValue = false;
   bool inventarioCerrado = false;
   Map<String, dynamic>? inventarioData;
+  String? nombreOperadorFirma;
+  String? nombreClienteFirma;
 
   @override
   void initState() {
@@ -80,7 +82,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
   // --- NUEVA LÓGICA DE PDFS USANDO EL SERVICIO PÚBLICO ---
 
   Future<void> generarPdfHighValue() async {
-    await Generator.generarPdfHighValue(widget.inventarioId);
+    await Generator.generarPdfHighValue(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
   }
 
   Future<void> mostrarOpcionesPdf() async {
@@ -95,14 +97,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
     TextButton(
       onPressed: () {
         Navigator.pop(context);
-        Generator.generarPdfCompleto(widget.inventarioId);
+        Generator.generarPdfCompleto(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
       },
       child: const Text("NO, NORMAL", style: TextStyle(color: Colors.grey)),
     ),
     ElevatedButton(
       onPressed: () {
         Navigator.pop(context);
-        Generator.generarPdfProGear(widget.inventarioId);
+        Generator.generarPdfProGear(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.red,  // Un naranja profesional
@@ -257,20 +259,24 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Future<void> irAFirmaOperador() async {
-    final resultado = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FirmaOperadorScreen(
-          inventarioId: widget.inventarioId,
-        ),
+  final resultado = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => FirmaOperadorScreen(
+        inventarioId: widget.inventarioId,
       ),
-    );
+    ),
+  );
 
-    if (resultado == true) {
-      await cargarInventario();
-      setState(() {});
-    }
+  if (resultado != null && resultado["guardado"] == true) {
+    setState(() {
+      nombreOperadorFirma = resultado["nombreOperador"];
+      nombreClienteFirma = resultado["nombreCliente"];
+    });
+
+    await cargarInventario();
   }
+}
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(

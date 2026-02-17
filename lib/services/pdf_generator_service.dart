@@ -43,7 +43,12 @@ String generarNombreArchivo({
       ".pdf";
 }
 
-Future<void> generarPdfCompleto(int inventarioId) async {
+Future<void> generarPdfCompleto(
+  int inventarioId, {
+  String? nombreOperador,
+  String? nombreCliente,}
+) async {
+
   final db = await DatabaseHelper.instance.database;
 
   final inventario = (await db.query(
@@ -70,10 +75,12 @@ Future<void> generarPdfCompleto(int inventarioId) async {
     articulos: articulos,
     tipo: "NORMAL",
     nombreArchivo: nombreArchivo,
+    nombreOperador: nombreOperador,
+    nombreCliente: nombreCliente,
   );
 }
 
-Future<void> generarPdfHighValue(int inventarioId) async {
+Future<void> generarPdfHighValue(int inventarioId, {String? nombreOperador, String? nombreCliente}) async {
   final db = await DatabaseHelper.instance.database;
 
   final inventario = (await db.query(
@@ -101,10 +108,12 @@ Future<void> generarPdfHighValue(int inventarioId) async {
     articulos: articulos,
     tipo: "HV",
     nombreArchivo: nombreArchivo,
+    nombreOperador: nombreOperador,
+    nombreCliente: nombreCliente,
   );
 }
 
-Future<void> generarPdfProGear(int inventarioId) async {
+Future<void> generarPdfProGear(int inventarioId, {String? nombreOperador, String? nombreCliente}) async {
   final db = await DatabaseHelper.instance.database;
 
   final inventario = (await db.query(
@@ -131,5 +140,7 @@ Future<void> generarPdfProGear(int inventarioId) async {
     articulos: articulos,
     tipo: "PROGEAR",
     nombreArchivo: nombreArchivo,
+    nombreOperador: nombreOperador,
+    nombreCliente: nombreCliente,
   );
 }

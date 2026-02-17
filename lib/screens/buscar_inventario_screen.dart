@@ -4,7 +4,7 @@ import '../services/pdf_generator_service.dart';
 import 'package:intl/intl.dart';
 
 class BuscarInventarioScreen extends StatefulWidget {
-  const BuscarInventarioScreen({Key? key}) : super(key: key);
+  const BuscarInventarioScreen({super.key});
 
   @override
   State<BuscarInventarioScreen> createState() =>

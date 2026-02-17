@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../database/database_helper.dart';
 
 class InventariosEliminadosScreen extends StatefulWidget {
-  const InventariosEliminadosScreen({Key? key}) : super(key: key);
+  const InventariosEliminadosScreen({super.key});
 
   @override
   State<InventariosEliminadosScreen> createState() =>

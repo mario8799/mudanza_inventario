@@ -10,7 +10,7 @@ class CreateInventarioScreen extends StatefulWidget {
   final int? inventarioId; 
 
   // 2. Insertamos TU línea aquí (reemplazando la anterior):
-  const CreateInventarioScreen({Key? key, this.inventarioId}) : super(key: key);
+  const CreateInventarioScreen({super.key, this.inventarioId});
 
   @override
   State<CreateInventarioScreen> createState() => _CreateInventarioScreenState();
