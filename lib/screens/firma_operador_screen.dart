@@ -20,6 +20,7 @@ class FirmaOperadorScreen extends StatefulWidget {
 
 class _FirmaOperadorScreenState extends State<FirmaOperadorScreen> {
   String? nombreOperadorFirma;
+  final GlobalKey _repaintKey = GlobalKey();
 
   @override
   void initState() {
@@ -43,7 +44,7 @@ class _FirmaOperadorScreenState extends State<FirmaOperadorScreen> {
   final SignatureController _controller = SignatureController(
     penStrokeWidth: 3,
     penColor: Colors.black,
-    exportBackgroundColor: Colors.white,
+    exportBackgroundColor: Colors.transparent,
   );
 
   Future<String?> solicitarNombreFirma(BuildContext context, String titulo) async {
@@ -102,12 +103,17 @@ class _FirmaOperadorScreenState extends State<FirmaOperadorScreen> {
 
     final db = await DatabaseHelper.instance.database;
 
-    await db.update(
-      'inventarios',
-      {'firmaOperador': path},
-      where: 'id = ?',
-      whereArgs: [widget.inventarioId],
-    );
+    final bytes = await File(path).readAsBytes();
+
+await db.update(
+  'inventarios',
+  {
+    'firmaOperador': bytes,
+  },
+  where: 'id = ?',
+  whereArgs: [widget.inventarioId],
+);
+
 
   final resultado = await Navigator.push(
   context,
@@ -151,14 +157,24 @@ if (resultado == true) {
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 20),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            height: 250,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black),
-            ),
-            child: Signature(controller: _controller),
-          ),
+          RepaintBoundary(
+  key: _repaintKey,
+  child: ColoredBox(
+    color: Colors.transparent, // 👈 fondo transparente
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 250,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black),
+      ),
+      child: Signature(
+        controller: _controller,
+        backgroundColor: Colors.transparent, // 👈 también importante
+      ),
+    ),
+  ),
+),
+
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: guardarFirma,

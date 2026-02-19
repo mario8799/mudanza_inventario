@@ -2,6 +2,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
+import 'dart:typed_data';
 
 class PdfService {
 
@@ -10,11 +12,17 @@ class PdfService {
     required List<Map<String, dynamic>> articulos,
     required String tipo, // "NORMAL", "HV", "PROGEAR"
     required String nombreArchivo,
-    String? nombreOperador,
-    String? nombreCliente,
+    Uint8List? firmaOperador,
+    Uint8List? firmaCliente,
+    required DateTime fechaInventario,
   }) async {
 
     final codigoInventario = inventario['numeroInventario']?.toString() ?? '';
+    final String nombreOperador = inventario['nombreOperador']?.toString() ?? "";
+    final String nombre = inventario['nombreCliente'] ?? '';
+    final String apellido = inventario['apellidoCliente'] ?? '';
+    final String shipperName = "$nombre $apellido".trim();
+
     final pdf = pw.Document();
 
     // 🔹 Elegir plantilla
@@ -44,9 +52,7 @@ class PdfService {
       paginas.add(
         articulos.sublist(
           i,
-          i + 30 > articulos.length
-              ? articulos.length
-              : i + 30,
+          i + 30 > articulos.length ? articulos.length : i + 30,
         ),
       );
     }
@@ -57,7 +63,6 @@ class PdfService {
 
     for (int pagina = 0; pagina < paginas.length; pagina++) {
       final articulosPagina = paginas[pagina];
-
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.letter,
@@ -66,6 +71,7 @@ class PdfService {
             return pw.Stack(
               children: [
 
+                // Fondo del formulario
                 pw.Positioned.fill(
                   child: pw.Image(
                     template,
@@ -74,6 +80,27 @@ class PdfService {
                 ),
 
                 // 🔹 HEADER
+
+// Agent
+_posCm(
+  top: 3.5,
+  left: 12,
+  child: pw.Text(
+    nombreOperador,
+    style: const pw.TextStyle(fontSize: 9),
+  ),
+),
+
+// Shipper’s Name
+_posCm(
+  top: 4.1,
+  left: 4,
+  child: pw.Text(
+    "$shipperName",
+    style: const pw.TextStyle(fontSize: 9),
+  ),
+),
+
 
                 _posCm(
                   top: headerTopCm - 0.8,
@@ -94,26 +121,8 @@ class PdfService {
                 ),
 
                 _posCm(
-                  top: headerTopCm,
-                  left: 13,
-                  child: pw.Text(
-                    nombreOperador ?? "",
-                    style: pw.TextStyle(fontSize: 9),
-                  ),
-                ),
-
-                _posCm(
-                  top: headerTopCm + 1.1,
-                  left: margenCm,
-                  child: pw.Text(
-                    nombreCliente ?? inventario['nombreCliente'] ?? "",
-                    style: pw.TextStyle(fontSize: 9),
-                  ),
-                ),
-
-                _posCm(
                   top: headerTopCm + 2.1,
-                  left: margenCm,
+                  left: 4,
                   child: pw.Text(
                     inventario['direccionOrigen'] ?? "",
                     style: pw.TextStyle(fontSize: 9),
@@ -122,7 +131,7 @@ class PdfService {
 
                 _posCm(
                   top: headerTopCm + 3.1,
-                  left: margenCm,
+                  left: 4,
                   child: pw.Text(
                     inventario['direccionDestino'] ?? "",
                     style: pw.TextStyle(fontSize: 9),
@@ -143,13 +152,57 @@ class PdfService {
                 // 🔹 TOTAL
                 if (pagina == paginas.length - 1)
                   _posCm(
-                    top: 22.8,
-                    left: 8.5,
+                    top: 22.23,
+                    left: 9.5,
                     child: pw.Text(
                       totalArticulos.toString(),
                       style: pw.TextStyle(fontSize: 9),
                     ),
                   ),
+
+                // 🔹 FIRMAS y FECHAS
+                if (firmaOperador != null && firmaOperador.isNotEmpty)
+  _posCm(
+    top: 23.5,
+    left: 3,
+    child: pw.Image(
+      pw.MemoryImage(firmaOperador),
+      width: 2 * PdfPageFormat.cm,
+      height: 1 * PdfPageFormat.cm,
+    ),
+  ),
+
+
+                if (firmaCliente != null)
+                  _posCm(
+                    top: 25,
+                    left: 3,
+                    child: pw.Image(
+                      pw.MemoryImage(firmaCliente),
+                      width: 2 * PdfPageFormat.cm,
+                      height: 1 * PdfPageFormat.cm,
+                    ),
+                  ),
+
+                // Fecha Operador
+                _posCm(
+                  top: 23.8,
+                  left: 8.6,
+                  child: pw.Text(
+                    DateFormat('dd/MM/yyyy').format(fechaInventario),
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                // Fecha Cliente
+                _posCm(
+                  top: 25.3,
+                  left: 8.6,
+                  child: pw.Text(
+                    DateFormat('dd/MM/yyyy').format(fechaInventario),
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
               ],
             );
           },
@@ -159,7 +212,6 @@ class PdfService {
 
     final pdfBytes = await pdf.save();
 
-    // 🔥 Compartir usando printing (NO share_plus)
     await Printing.sharePdf(
       bytes: pdfBytes,
       filename: nombreArchivo,
@@ -187,7 +239,6 @@ class PdfService {
     double anchoArticle,
   ) {
     return [
-
       _posCm(
         top: topCm,
         left: margenCm,
@@ -199,7 +250,6 @@ class PdfService {
           ),
         ),
       ),
-
       _posCm(
         top: topCm,
         left: margenCm + anchoItem,
@@ -211,7 +261,6 @@ class PdfService {
           ),
         ),
       ),
-
       _posCm(
         top: topCm,
         left: margenCm + anchoItem + anchoType,
@@ -223,7 +272,6 @@ class PdfService {
           ),
         ),
       ),
-
       _posCm(
         top: topCm,
         left: margenCm + anchoItem + anchoType + anchoArticle,

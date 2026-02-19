@@ -1,5 +1,6 @@
 import '../database/database_helper.dart';
 import '../services/pdf_service.dart';
+import 'dart:typed_data';
 
 String generarNombreArchivo({
   required Map<String, dynamic> inventario,
@@ -43,11 +44,8 @@ String generarNombreArchivo({
       ".pdf";
 }
 
-Future<void> generarPdfCompleto(
-  int inventarioId, {
-  String? nombreOperador,
-  String? nombreCliente,}
-) async {
+Future<void> generarPdfCompleto(int inventarioId) async {
+
 
   final db = await DatabaseHelper.instance.database;
 
@@ -56,6 +54,10 @@ Future<void> generarPdfCompleto(
     where: 'id = ?',
     whereArgs: [inventarioId],
   )).first;
+
+  final fechaInventario = inventario['fechaCreacion'] != null
+    ? DateTime.tryParse(inventario['fechaCreacion'].toString()) ?? DateTime.now()
+    : DateTime.now();
 
   final articulos = await db.query(
     'articulos',
@@ -71,23 +73,31 @@ Future<void> generarPdfCompleto(
       );
 
   await PdfService.generarPdf(
-    inventario: inventario,
-    articulos: articulos,
-    tipo: "NORMAL",
-    nombreArchivo: nombreArchivo,
-    nombreOperador: nombreOperador,
-    nombreCliente: nombreCliente,
-  );
+  inventario: inventario,
+  articulos: articulos,
+  tipo: "NORMAL",
+  nombreArchivo: nombreArchivo,
+  fechaInventario: fechaInventario,
+ firmaOperador: inventario['firmaOperador'] as Uint8List?,
+firmaCliente: inventario['firmaCliente'] as Uint8List?,
+);
+
 }
 
-Future<void> generarPdfHighValue(int inventarioId, {String? nombreOperador, String? nombreCliente}) async {
+Future<void> generarPdfHighValue(int inventarioId) async {
+
   final db = await DatabaseHelper.instance.database;
 
   final inventario = (await db.query(
     'inventarios',
     where: 'id = ?',
+
     whereArgs: [inventarioId],
   )).first;
+
+  final fechaInventario = inventario['fechaCreacion'] != null
+    ? DateTime.tryParse(inventario['fechaCreacion'].toString()) ?? DateTime.now()
+    : DateTime.now();
 
   final articulos = await db.query(
     'articulos',
@@ -104,16 +114,19 @@ Future<void> generarPdfHighValue(int inventarioId, {String? nombreOperador, Stri
       );
 
   await PdfService.generarPdf(
-    inventario: inventario,
-    articulos: articulos,
-    tipo: "HV",
-    nombreArchivo: nombreArchivo,
-    nombreOperador: nombreOperador,
-    nombreCliente: nombreCliente,
-  );
+  inventario: inventario,
+  articulos: articulos,
+  tipo: "HV", // o "PROGEAR"
+  nombreArchivo: nombreArchivo,
+  fechaInventario: fechaInventario,
+  firmaOperador: inventario['firmaOperador'] as Uint8List?,
+  firmaCliente: inventario['firmaCliente'] as Uint8List?,
+);
+
 }
 
-Future<void> generarPdfProGear(int inventarioId, {String? nombreOperador, String? nombreCliente}) async {
+Future<void> generarPdfProGear(int inventarioId) async {
+
   final db = await DatabaseHelper.instance.database;
 
   final inventario = (await db.query(
@@ -121,6 +134,10 @@ Future<void> generarPdfProGear(int inventarioId, {String? nombreOperador, String
     where: 'id = ?',
     whereArgs: [inventarioId],
   )).first;
+
+final fechaInventario = inventario['fechaCreacion'] != null
+    ? DateTime.tryParse(inventario['fechaCreacion'].toString()) ?? DateTime.now()
+    : DateTime.now();
 
   final articulos = await db.query(
     'articulos',
@@ -135,12 +152,13 @@ Future<void> generarPdfProGear(int inventarioId, {String? nombreOperador, String
         tipo: "PROGEAR",
       );
 
-  await PdfService.generarPdf(
-    inventario: inventario,
-    articulos: articulos,
-    tipo: "PROGEAR",
-    nombreArchivo: nombreArchivo,
-    nombreOperador: nombreOperador,
-    nombreCliente: nombreCliente,
-  );
+ await PdfService.generarPdf(
+  inventario: inventario,
+  articulos: articulos,
+  tipo: "HV", // o "PROGEAR"
+  nombreArchivo: nombreArchivo,
+  fechaInventario: fechaInventario,
+  firmaOperador: inventario['firmaOperador'] as Uint8List?,
+  firmaCliente: inventario['firmaCliente'] as Uint8List?,
+);
 }

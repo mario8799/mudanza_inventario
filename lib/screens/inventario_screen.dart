@@ -4,7 +4,6 @@ import 'add_item_screen.dart';
 import 'firma_operador_screen.dart';
 import '../models/articulo.dart';
 import '../services/printer_service.dart';
-// Importamos el nuevo generador con un alias para mayor claridad
 import '../services/pdf_generator_service.dart' as Generator;
 
 class InventarioScreen extends StatefulWidget {
@@ -38,13 +37,12 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Future<void> cargarEstadoInventario() async {
-    final inv = await DatabaseHelper.instance.getInventarioById(widget.inventarioId);
+    final inv =
+        await DatabaseHelper.instance.getInventarioById(widget.inventarioId);
     setState(() {
       inventarioCerrado = inv['cerrado'] == 1;
     });
   }
-
-  // --- LÓGICA DE DATOS ---
 
   Future<void> cargarInventario() async {
     final db = await DatabaseHelper.instance.database;
@@ -69,7 +67,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
       whereArgs: [widget.inventarioId],
       orderBy: 'correlativo ASC',
     );
-    final listaArticulos = data.map((map) => Articulo.fromMap(map)).toList();
+    final listaArticulos =
+        data.map((map) => Articulo.fromMap(map)).toList();
 
     final hayHV = listaArticulos.any((a) => a.isHighValue == 1);
 
@@ -79,47 +78,57 @@ class _InventarioScreenState extends State<InventarioScreen> {
     });
   }
 
-  // --- NUEVA LÓGICA DE PDFS USANDO EL SERVICIO PÚBLICO ---
-
   Future<void> generarPdfHighValue() async {
-    await Generator.generarPdfHighValue(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
+    await Generator.generarPdfHighValue(
+      widget.inventarioId,
+    );
   }
 
   Future<void> mostrarOpcionesPdf() async {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), // Bordes redondeados
-  title: const Text("Tipo de Inventario"),
-  content: const Text("¿Este reporte corresponde a Equipo Profesional (ProGear)?"),
-  actions: [
-    TextButton(
-      onPressed: () {
-        Navigator.pop(context);
-        Generator.generarPdfCompleto(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
-      },
-      child: const Text("NO, NORMAL", style: TextStyle(color: Colors.grey)),
-    ),
-    ElevatedButton(
-      onPressed: () {
-        Navigator.pop(context);
-        Generator.generarPdfProGear(widget.inventarioId, nombreOperador: nombreOperadorFirma, nombreCliente: nombreClienteFirma);
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,  // Un naranja profesional
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: const Text("SÍ, ES PROGEAR"),
-    ),
-  ],
-);
-    },
-  );
-}
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15)),
+          title: const Text("Tipo de Inventario"),
+          content: const Text(
+              "¿Este reporte corresponde a Equipo Profesional (ProGear)?"),
+          actions: [
+            TextButton(
+  onPressed: () async {
+    Navigator.pop(context);
 
-  // --- UTILIDADES ---
+    await Generator.generarPdfCompleto(
+      widget.inventarioId,
+    );
+  },
+  child: const Text(
+    "NO, NORMAL",
+    style: TextStyle(color: Colors.grey),
+  ),
+),
+
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Generator.generarPdfProGear(
+                  widget.inventarioId,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("SÍ, ES PROGEAR"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<int> obtenerSiguienteCorrelativo() async {
     final db = await DatabaseHelper.instance.database;
@@ -134,8 +143,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
   String formatearCorrelativo(int correlativo) {
     return correlativo.toString().padLeft(4, '0');
   }
-
-  // --- ACCIONES ---
 
   Future<void> agregarArticulo() async {
     int nuevoCorrelativo = await obtenerSiguienteCorrelativo();
@@ -198,7 +205,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Confirmar eliminación"),
-        content: const Text("¿Desea marcar este artículo como eliminado?"),
+        content:
+            const Text("¿Desea marcar este artículo como eliminado?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -209,7 +217,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
               Navigator.pop(context);
               await marcarComoEliminado(id);
             },
-            child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+            child: const Text(
+              "Eliminar",
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -243,7 +254,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await DatabaseHelper.instance.cerrarInventario(widget.inventarioId);
+              await DatabaseHelper.instance
+                  .cerrarInventario(widget.inventarioId);
               if (mounted) {
                 setState(() {
                   inventarioCerrado = true;
@@ -259,35 +271,37 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Future<void> irAFirmaOperador() async {
-  final resultado = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => FirmaOperadorScreen(
-        inventarioId: widget.inventarioId,
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FirmaOperadorScreen(
+          inventarioId: widget.inventarioId,
+        ),
       ),
-    ),
-  );
+    );
 
-  if (resultado != null && resultado["guardado"] == true) {
-    setState(() {
-      nombreOperadorFirma = resultado["nombreOperador"];
-      nombreClienteFirma = resultado["nombreCliente"];
-    });
+    if (resultado != null && resultado["guardado"] == true) {
+      await cargarInventario();
 
-    await cargarInventario();
+      setState(() {
+        nombreOperadorFirma = resultado["nombreOperador"];
+        nombreClienteFirma = resultado["nombreCliente"];
+      });
+    }
   }
-}
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(color: Colors.black87, fontSize: 14),
+          style:
+              const TextStyle(color: Colors.black87, fontSize: 14),
           children: [
             TextSpan(
               text: "$label: ",
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold),
             ),
             TextSpan(text: value),
           ],
@@ -311,7 +325,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
         children: [
           const SizedBox(height: 10),
           ElevatedButton.icon(
-            onPressed: inventarioCerrado ? null : agregarArticulo,
+            onPressed:
+                inventarioCerrado ? null : agregarArticulo,
             icon: const Icon(Icons.add),
             label: const Text("Agregar artículo"),
           ),
@@ -324,94 +339,138 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 bool eliminado = articulo.eliminado == 1;
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 4),
                   elevation: 2,
                   child: ExpansionTile(
                     title: Text(
                       "${widget.numeroInventario}-${formatearCorrelativo(articulo.correlativo)}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        decoration: eliminado ? TextDecoration.lineThrough : null,
+                        decoration: eliminado
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     subtitle: Text(
-                      eliminado ? "ELIMINADO" : articulo.descripcion,
+                      eliminado
+                          ? "ELIMINADO"
+                          : articulo.descripcion,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: eliminado ? Colors.red : Colors.grey[600],
+                        color: eliminado
+                            ? Colors.red
+                            : Colors.grey[600],
                       ),
                     ),
                     trailing: articulo.isHighValue == 1
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding:
+                                const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.red,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(12),
                             ),
                             child: const Text(
                               "HV",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                  fontSize: 10),
                             ),
                           )
                         : null,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding:
+                            const EdgeInsets.all(16.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            _buildDetailRow("Tipo", articulo.tipo),
-                            _buildDetailRow("Descripción", articulo.descripcion),
-                            _buildDetailRow("Habitación", articulo.habitacion),
-                            _buildDetailRow("Estado", articulo.estado),
-                            _buildDetailRow("Observaciones", articulo.observaciones),
+                            _buildDetailRow(
+                                "Tipo", articulo.tipo),
+                            _buildDetailRow("Descripción",
+                                articulo.descripcion),
+                            _buildDetailRow("Habitación",
+                                articulo.habitacion),
+                            _buildDetailRow(
+                                "Estado", articulo.estado),
+                            _buildDetailRow(
+                                "Observaciones",
+                                articulo.observaciones),
                             const Divider(),
-                            // --- Dentro del Row de botones de cada artículo ---
-Row(
-  mainAxisAlignment: MainAxisAlignment.end,
-  children: [
-    // El botón de IMPRIMIR siempre debe ser visible
-    TextButton.icon(
-      onPressed: () async {
-  final db = await DatabaseHelper.instance.database;
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    final db =
+                                        await DatabaseHelper
+                                            .instance
+                                            .database;
 
-  final inventario = (await db.query(
-    'inventarios',
-    where: 'id = ?',
-    whereArgs: [articulo.inventarioId],
-  )).first;
+                                    final inventario =
+                                        (await db.query(
+                                      'inventarios',
+                                      where: 'id = ?',
+                                      whereArgs: [
+                                        articulo
+                                            .inventarioId
+                                      ],
+                                    )).first;
 
-  await PrinterService.printArticulo(
-    articulo: articulo,
-    inventario: inventario,
-  );
-},
-
-      icon: const Icon(Icons.print, size: 18),
-      label: const Text("Imprimir"),
-    ),
-
-    // Solo si el inventario NO está cerrado, renderizamos Editar y Eliminar
-    if (!inventarioCerrado) ...[
-      const SizedBox(width: 10),
-      TextButton.icon(
-        onPressed: () => editarArticulo(articulo),
-        icon: const Icon(Icons.edit, size: 18),
-        label: const Text("Editar"),
-      ),
-      const SizedBox(width: 10),
-      TextButton.icon(
-        onPressed: () => confirmarEliminacion(articulo.id!),
-        icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-        label: const Text(
-          "Eliminar",
-          style: TextStyle(color: Colors.red),
-        ),
-      ),
-    ],
-  ],
-),
+                                    await PrinterService
+                                        .printArticulo(
+                                      articulo: articulo,
+                                      inventario:
+                                          inventario,
+                                    );
+                                  },
+                                  icon: const Icon(
+                                      Icons.print,
+                                      size: 18),
+                                  label:
+                                      const Text("Imprimir"),
+                                ),
+                                if (!inventarioCerrado) ...[
+                                  const SizedBox(width: 10),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        editarArticulo(
+                                            articulo),
+                                    icon: const Icon(
+                                        Icons.edit,
+                                        size: 18),
+                                    label:
+                                        const Text("Editar"),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        confirmarEliminacion(
+                                            articulo.id!),
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      size: 18,
+                                      color: Colors.red,
+                                    ),
+                                    label: const Text(
+                                      "Eliminar",
+                                      style: TextStyle(
+                                          color:
+                                              Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -421,10 +480,11 @@ Row(
               },
             ),
           ),
-          // --- BOTONES INFERIORES ---
           if (mostrarPdf && existeHighValue)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -435,39 +495,55 @@ Row(
                   ),
                   child: const Text(
                     "GENERAR HIGH VALUE",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight:
+                            FontWeight.bold),
                   ),
                 ),
               ),
             ),
           if (mostrarPdf)
-  Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        // Cambiamos la llamada directa por el diálogo
-        onPressed: mostrarOpcionesPdf, 
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue, 
-          foregroundColor: Colors.white
-        ),
-        child: const Text(
-          "GENERAR PDF", 
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-        ),
-      ),
-    ),
-  ),
-          if (inventarioData == null || inventarioData!['activo'] == 1)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: mostrarOpcionesPdf,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white),
+                  child: const Text(
+                    "GENERAR PDF",
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight:
+                            FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          if (inventarioData == null ||
+              inventarioData!['activo'] == 1)
             Padding(
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: mostrarConfirmacionCierre,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                  child: const Text("CERRAR INVENTARIO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  onPressed:
+                      mostrarConfirmacionCierre,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white),
+                  child: const Text(
+                    "CERRAR INVENTARIO",
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight:
+                            FontWeight.bold),
+                  ),
                 ),
               ),
             ),

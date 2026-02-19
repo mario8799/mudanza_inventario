@@ -4,64 +4,6 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-  Future<void> limpiarPapeleraAntigua() async {
-  final db = await database;
-  // Calculamos la fecha límite (hace 30 días)
-  final fechaLimite = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
-
-  // Eliminamos físicamente los registros que marcaste como eliminados hace más de 30 días
-  await db.delete(
-    'inventarios',
-    where: 'eliminado = 1 AND fecha_eliminacion <= ?',
-    whereArgs: [fechaLimite],
-  );
-}
-
-Future<List<Map<String, dynamic>>> getInventariosEliminados() async {
-  final db = await database;
-
-  final fechaLimite = DateTime.now()
-      .subtract(const Duration(days: 30))
-      .toIso8601String();
-
-  return await db.query(
-    'inventarios',
-    where: 'eliminado = 1 AND fecha_eliminacion >= ?',
-    whereArgs: [fechaLimite],
-    orderBy: 'fecha_eliminacion DESC',
-  );
-}
-
-Future<void> restaurarInventario(int id) async {
-  final db = await database;
-  await db.update(
-    'inventarios',
-    {
-      'eliminado': 0,
-      'fecha_eliminacion': null,
-      'fechaActualizacion': DateTime.now().toIso8601String(),
-    },
-    where: 'id = ?',
-    whereArgs: [id],
-  );
-}
-
-Future<void> eliminarInventarioDefinitivo(int id) async {
-  final db = await database;
-
-  await db.delete(
-    'articulos',
-    where: 'inventario_id = ?',
-    whereArgs: [id],
-  ); //Elimina articulos
-
-  await db.delete(
-    'inventarios',
-    where: 'id = ?',
-    whereArgs: [id],
-  ); //Elimina inventarios
-}
-
 
   DatabaseHelper._init();
 
@@ -79,7 +21,7 @@ Future<void> eliminarInventarioDefinitivo(int id) async {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3, // 🔥 Subimos versión
       onCreate: _createDB,
     );
   }
@@ -87,7 +29,6 @@ Future<void> eliminarInventarioDefinitivo(int id) async {
   // ================= CREATE TABLES =================
 
   Future _createDB(Database db, int version) async {
-
     await db.execute('''
     CREATE TABLE inventarios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,8 +42,8 @@ Future<void> eliminarInventarioDefinitivo(int id) async {
       fechaCreacion TEXT,
       fechaActualizacion TEXT,
       fechaCierre TEXT,
-      firmaOperador TEXT,
-      firmaCliente TEXT,
+      firmaOperador BLOB,
+      firmaCliente BLOB,
       estado_sync INTEGER DEFAULT 0,
       eliminado INTEGER DEFAULT 0,
       fecha_eliminacion TEXT,
@@ -125,6 +66,66 @@ Future<void> eliminarInventarioDefinitivo(int id) async {
       is_high_value INTEGER NOT NULL DEFAULT 0
     )
     ''');
+  }
+
+  // ================= PAPELERA =================
+
+  Future<void> limpiarPapeleraAntigua() async {
+    final db = await database;
+
+    final fechaLimite =
+        DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+    await db.delete(
+      'inventarios',
+      where: 'eliminado = 1 AND fecha_eliminacion <= ?',
+      whereArgs: [fechaLimite],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getInventariosEliminados() async {
+    final db = await database;
+
+    final fechaLimite =
+        DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+    return await db.query(
+      'inventarios',
+      where: 'eliminado = 1 AND fecha_eliminacion >= ?',
+      whereArgs: [fechaLimite],
+      orderBy: 'fecha_eliminacion DESC',
+    );
+  }
+
+  Future<void> restaurarInventario(int id) async {
+    final db = await database;
+
+    await db.update(
+      'inventarios',
+      {
+        'eliminado': 0,
+        'fecha_eliminacion': null,
+        'fechaActualizacion': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> eliminarInventarioDefinitivo(int id) async {
+    final db = await database;
+
+    await db.delete(
+      'articulos',
+      where: 'inventario_id = ?',
+      whereArgs: [id],
+    );
+
+    await db.delete(
+      'inventarios',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // ================= INVENTARIOS =================
@@ -182,7 +183,7 @@ Future<void> eliminarInventarioDefinitivo(int id) async {
     );
   }
 
-  // ================= ARTICULOS (BLINDADOS) =================
+  // ================= ARTICULOS =================
 
   Future<void> insertArticulo(Map<String, dynamic> data) async {
     final db = await database;
