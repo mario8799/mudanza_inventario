@@ -8,7 +8,7 @@ String generarNombreArchivo({
   // 🔹 Número siempre con 4 dígitos
   final numero = inventario['numeroInventario']
       .toString()
-      .padLeft(4, '0');
+      .padLeft(5, '0');
 
   final nombre = inventario['nombreCliente']
       .toString()

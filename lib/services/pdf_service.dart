@@ -1,306 +1,237 @@
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class PdfService {
 
   static Future<void> generarPdf({
-    required String nombreArchivo,
     required Map<String, dynamic> inventario,
     required List<Map<String, dynamic>> articulos,
-    String tipo = "NORMAL",
+    required String tipo, // "NORMAL", "HV", "PROGEAR"
+    required String nombreArchivo,
     String? nombreOperador,
     String? nombreCliente,
-
   }) async {
 
+    final codigoInventario = inventario['numeroInventario']?.toString() ?? '';
     final pdf = pw.Document();
 
-    Uint8List? firmaOperador;
-    Uint8List? firmaCliente;
+    // 🔹 Elegir plantilla
+    final templateBytes = await rootBundle.load(
+      tipo == "PROGEAR"
+          ? "assets/pdfs/progear_inventory.png"
+          : "assets/pdfs/normal_inventory.png",
+    );
 
-    if (inventario['firmaOperador'] != null) {
-      firmaOperador =
-          await File(inventario['firmaOperador']).readAsBytes();
+    final template = pw.MemoryImage(templateBytes.buffer.asUint8List());
+
+    final totalArticulos = articulos.length;
+
+    const double margenCm = 1.6;
+    const double headerTopCm = 3;
+    const double primeraFilaTopCm = 9.7;
+    const double altoFilaCm = 0.4;
+
+    const double anchoItem = 1.2;
+    const double anchoType = 1.4;
+    const double anchoArticle = 11.2;
+
+    // 🔹 Dividir en páginas de 30 filas
+    List<List<Map<String, dynamic>>> paginas = [];
+
+    for (int i = 0; i < articulos.length; i += 30) {
+      paginas.add(
+        articulos.sublist(
+          i,
+          i + 30 > articulos.length
+              ? articulos.length
+              : i + 30,
+        ),
+      );
     }
 
-    if (inventario['firmaCliente'] != null) {
-      firmaCliente =
-          await File(inventario['firmaCliente']).readAsBytes();
+    if (paginas.isEmpty) {
+      paginas.add([]);
     }
 
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.letter,
-        margin: const pw.EdgeInsets.all(32),
-        build: (context) => [
-          pw.Stack(
-            children: [
-              if (tipo == "PROGEAR")
+    for (int pagina = 0; pagina < paginas.length; pagina++) {
+      final articulosPagina = paginas[pagina];
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.letter,
+          margin: pw.EdgeInsets.zero,
+          build: (context) {
+            return pw.Stack(
+              children: [
+
                 pw.Positioned.fill(
-                  child: pw.Center(
-                    child: pw.Transform.rotate(
-                      angle: 0.5,
-                      child: pw.Text(
-                        "PROGEAR",
-                        style: pw.TextStyle(
-                          fontSize: 100,
-                          color: PdfColors.grey100,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  child: pw.Image(
+                    template,
+                    fit: pw.BoxFit.fill,
                   ),
                 ),
 
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
+                // 🔹 HEADER
 
-                  // ================= ENCABEZADO =================
-                  pw.Row(
-                    mainAxisAlignment:
-                        pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                        crossAxisAlignment:
-                            pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            tipo == "HV"
-                                ? "DECLARACIÓN DE ALTO VALOR"
-                                : "INVENTARIO DE MUDANZA",
-                            style: pw.TextStyle(
-                              fontSize: 18,
-                              fontWeight: pw.FontWeight.bold,
-                              color: tipo == "HV"
-                                  ? PdfColors.red900
-                                  : PdfColors.blue900,
-                            ),
-                          ),
-                          if (tipo == "HV")
-                            pw.Text(
-                              "AVISO: Tratamiento especial requerido",
-                              style: pw.TextStyle(
-                                  fontSize: 8,
-                                  color: PdfColors.red),
-                            ),
-                          pw.SizedBox(height: 10),
-                          pw.Text(
-                            "Número: ${inventario['numeroInventario']}",
-                            style: pw.TextStyle(
-                                fontWeight: pw.FontWeight.bold),
-                          ),
-                          pw.Text(
-                            "Cliente: ${inventario['nombreCliente']} ${inventario['apellidoCliente']}",
-                          ),
-                        ],
-                      ),
-                    ],
+                _posCm(
+                  top: headerTopCm - 0.8,
+                  left: 8.5,
+                  child: pw.Text(
+                    " $codigoInventario",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                _posCm(
+                  top: headerTopCm,
+                  left: margenCm,
+                  child: pw.Text(
+                    "Cornerstone Moving & Storage",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                _posCm(
+                  top: headerTopCm,
+                  left: 13,
+                  child: pw.Text(
+                    nombreOperador ?? "",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                _posCm(
+                  top: headerTopCm + 1.1,
+                  left: margenCm,
+                  child: pw.Text(
+                    nombreCliente ?? inventario['nombreCliente'] ?? "",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                _posCm(
+                  top: headerTopCm + 2.1,
+                  left: margenCm,
+                  child: pw.Text(
+                    inventario['direccionOrigen'] ?? "",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                _posCm(
+                  top: headerTopCm + 3.1,
+                  left: margenCm,
+                  child: pw.Text(
+                    inventario['direccionDestino'] ?? "",
+                    style: pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                // 🔹 FILAS
+                for (int i = 0; i < articulosPagina.length; i++)
+                  ..._buildFila(
+                    articulosPagina[i],
+                    primeraFilaTopCm + (i * altoFilaCm),
+                    margenCm,
+                    anchoItem,
+                    anchoType,
+                    anchoArticle,
                   ),
 
-                  pw.SizedBox(height: 20),
-                  pw.Divider(thickness: 1, color: PdfColors.grey300),
-
-                  // ================= TÍTULO =================
-                  pw.Text(
-                    tipo == "PROGEAR"
-                        ? "LISTADO DE EQUIPO PROFESIONAL"
-                        : "LISTADO DE ARTÍCULOS",
-                    style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold),
-                  ),
-
-                  pw.SizedBox(height: 10),
-
-                  // ================= TABLA =================
-                  pw.Table(
-                    border: pw.TableBorder.all(
-                      color: PdfColors.grey600,
-                      width: 0.5,
+                // 🔹 TOTAL
+                if (pagina == paginas.length - 1)
+                  _posCm(
+                    top: 22.8,
+                    left: 8.5,
+                    child: pw.Text(
+                      totalArticulos.toString(),
+                      style: pw.TextStyle(fontSize: 9),
                     ),
-                    columnWidths: {
-                      0: const pw.FixedColumnWidth(60),  // Correlativo
-                      1: const pw.FixedColumnWidth(50),  // Tipo
-                      2: const pw.FlexColumnWidth(2),    // Descripción
-                      3: const pw.FixedColumnWidth(70),  // Estado
-                      4: const pw.FlexColumnWidth(2),    // Observaciones
-                    },
-                    children: [
-
-                      // ---------- ENCABEZADOS ----------
-                      pw.TableRow(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.grey300,
-                        ),
-                        children: [
-                          _headerCell("Correlativo"),
-                          _headerCell("Tipo"),
-                          _headerCell("Descripción"),
-                          _headerCell("Estado"),
-                          _headerCell("Observaciones"),
-                        ],
-                      ),
-
-                      // ---------- FILAS ----------
-                      ...articulos.map((a) {
-
-  final esHV = a['isHighValue'] == 1 || a['isHighValue'] == true;
-
-  final observacionesTexto = a['observaciones'] ?? "";
-
-  final observacionesFinal = esHV
-      ? "[HV],  $observacionesTexto"
-      : observacionesTexto;
-
-  return pw.TableRow(
-    children: [
-
-      _bodyCell(
-        a['correlativo']
-            .toString()
-            .padLeft(4, '0'),
-      ),
-
-      _bodyCell(
-        a['tipo'] ?? "",
-      ),
-
-      _bodyCell(
-        a['descripcion'] ?? "",
-      ),
-
-      _bodyCell(
-        a['estado'] ?? "",
-      ),
-
-      _bodyCell(
-        observacionesFinal,
-        isHV: esHV,
-      ),
-    ],
-  );
-}).toList(),
-
-                    ],
                   ),
+              ],
+            );
+          },
+        ),
+      );
+    }
 
-                  pw.SizedBox(height: 30),
-                  pw.Divider(thickness: 1, color: PdfColors.grey300),
-                  pw.SizedBox(height: 20),
+    final pdfBytes = await pdf.save();
 
-                  // ================= FIRMAS =================
-                  pw.Row(
-  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-  children: [
-
-    if (firmaOperador != null)
-      pw.Column(
-        children: [
-
-          pw.Image(
-            pw.MemoryImage(firmaOperador),
-            height: 80,
-          ),
-
-          pw.SizedBox(height: 5),
-
-          pw.Text(
-            nombreOperador ?? "",
-            style: const pw.TextStyle(fontSize: 10),
-          ),
-
-          pw.SizedBox(height: 5),
-
-          pw.Text(
-            "Firma Operador",
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-
-    if (firmaCliente != null)
-      pw.Column(
-        children: [
-
-          pw.Image(
-            pw.MemoryImage(firmaCliente),
-            height: 80,
-          ),
-
-          pw.SizedBox(height: 5),
-
-          pw.Text(
-            nombreCliente ?? "",
-            style: const pw.TextStyle(fontSize: 10),
-          ),
-
-          pw.SizedBox(height: 5),
-
-          pw.Text(
-            "Firma Cliente",
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-
-  ],
-),
-
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    final bytes = await pdf.save();
-
+    // 🔥 Compartir usando printing (NO share_plus)
     await Printing.sharePdf(
-      bytes: bytes,
+      bytes: pdfBytes,
       filename: nombreArchivo,
     );
   }
 
-  // ================= CELDAS =================
-
-  static pw.Widget _headerCell(String text) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontSize: 9,
-          fontWeight: pw.FontWeight.bold,
-        ),
-        textAlign: pw.TextAlign.center,
-      ),
+  static pw.Widget _posCm({
+    required double top,
+    required double left,
+    required pw.Widget child,
+  }) {
+    return pw.Positioned(
+      top: top * PdfPageFormat.cm,
+      left: left * PdfPageFormat.cm,
+      child: child,
     );
   }
 
-  static pw.Widget _bodyCell(String text, {bool isHV = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontSize: 9,
-          fontWeight:
-              isHV ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color:
-              isHV ? PdfColors.red800 : PdfColors.black,
+  static List<pw.Widget> _buildFila(
+    Map<String, dynamic> articulo,
+    double topCm,
+    double margenCm,
+    double anchoItem,
+    double anchoType,
+    double anchoArticle,
+  ) {
+    return [
+
+      _posCm(
+        top: topCm,
+        left: margenCm,
+        child: pw.SizedBox(
+          width: anchoItem * PdfPageFormat.cm,
+          child: pw.Text(
+            articulo['correlativo']?.toString() ?? "",
+            style: pw.TextStyle(fontSize: 9),
+          ),
         ),
       ),
-    );
+
+      _posCm(
+        top: topCm,
+        left: margenCm + anchoItem,
+        child: pw.SizedBox(
+          width: anchoType * PdfPageFormat.cm,
+          child: pw.Text(
+            articulo['tipo'] ?? "",
+            style: pw.TextStyle(fontSize: 9),
+          ),
+        ),
+      ),
+
+      _posCm(
+        top: topCm,
+        left: margenCm + anchoItem + anchoType,
+        child: pw.SizedBox(
+          width: anchoArticle * PdfPageFormat.cm,
+          child: pw.Text(
+            articulo['descripcion'] ?? "",
+            style: pw.TextStyle(fontSize: 9),
+          ),
+        ),
+      ),
+
+      _posCm(
+        top: topCm,
+        left: margenCm + anchoItem + anchoType + anchoArticle,
+        child: pw.Text(
+          articulo['estado'] ?? "",
+          style: pw.TextStyle(fontSize: 9),
+        ),
+      ),
+    ];
   }
 }
