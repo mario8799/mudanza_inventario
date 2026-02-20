@@ -52,6 +52,7 @@ class Inventario {
       'id': id,
       'uuid': uuid,
       'numeroInventario': numeroInventario,
+      'nombreOperador': nombreOperador,
       'nombreCliente': nombreCliente,
       'apellidoCliente': apellidoCliente,
       'telefonoCliente': telefonoCliente,

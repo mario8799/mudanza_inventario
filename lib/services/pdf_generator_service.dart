@@ -80,7 +80,7 @@ Future<void> generarPdfCompleto(int inventarioId) async {
   fechaInventario: fechaInventario,
   firmaOperador: inventario['firmaOperador'] as Uint8List?,
   firmaCliente: inventario['firmaCliente'] as Uint8List?,
-  nombreOperador: inventario['nombreOperador']?.toString() ?? '',
+  nombreOperador: inventario['nombreOperador']?.toString() ?? 'N/A',
 );
 
 }
@@ -122,7 +122,7 @@ Future<void> generarPdfHighValue(int inventarioId) async {
   fechaInventario: fechaInventario,
   firmaOperador: inventario['firmaOperador'] as Uint8List?,
   firmaCliente: inventario['firmaCliente'] as Uint8List?,
-  nombreOperador: inventario['nombreOperador']?.toString() ?? '',
+  nombreOperador: inventario['nombreOperador']?.toString() ?? 'N/A',
 );
 
 }
@@ -162,6 +162,6 @@ final fechaInventario = inventario['fechaCreacion'] != null
   fechaInventario: fechaInventario,
   firmaOperador: inventario['firmaOperador'] as Uint8List?,
   firmaCliente: inventario['firmaCliente'] as Uint8List?,
-  nombreOperador: inventario['nombreOperador']?.toString() ?? '',
+  nombreOperador: inventario['nombreOperador']?.toString() ?? 'N/A',
 );
 }

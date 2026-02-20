@@ -5,7 +5,6 @@ import 'inventario_screen.dart';
 import 'dart:math';
 import 'package:uuid/uuid.dart'; 
 import '../services/solicitarNombreFirma.dart';
-import '../services/pdf_service.dart'; // 🔹 Asegúrate de importar PdfService
 
 class CreateInventarioScreen extends StatefulWidget {
   final int? inventarioId; 
@@ -72,17 +71,6 @@ class _CreateInventarioScreenState extends State<CreateInventarioScreen> {
     final id = await db.insert('inventarios', nuevoInventario.toMap());
 
     if (!mounted) return;
-
-    // 🔹 Opcional: Generar PDF inmediatamente y pasar nombreOperador
-    // Aquí puedes pasar cualquier lista de artículos y tipo de PDF que quieras
-    await PdfService.generarPdf(
-      inventario: nuevoInventario.toMap(),
-      articulos: [], // 🔹 Pon tus artículos reales aquí
-      tipo: "NORMAL",
-      nombreArchivo: "Inventario_$numeroGenerado.pdf",
-      nombreOperador: nombreOperador, // ✅ El operador llega aquí
-      fechaInventario: DateTime.now(),
-    );
 
     // Navegar a la pantalla de inventario
     Navigator.pushReplacement(

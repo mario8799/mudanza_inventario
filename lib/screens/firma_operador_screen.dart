@@ -22,63 +22,12 @@ class _FirmaOperadorScreenState extends State<FirmaOperadorScreen> {
   String? nombreOperadorFirma;
   final GlobalKey _repaintKey = GlobalKey();
 
-  @override
-  void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    final nombre = await solicitarNombreFirma(
-      context,
-      "Ingrese nombre del Operador",
-    );
-
-    if (nombre == null) {
-      Navigator.pop(context);
-    } else {
-      setState(() {
-        nombreOperadorFirma = nombre;
-      });
-    }
-  });
-}
-
   final SignatureController _controller = SignatureController(
     penStrokeWidth: 3,
     penColor: Colors.black,
     exportBackgroundColor: Colors.transparent,
   );
 
-  Future<String?> solicitarNombreFirma(BuildContext context, String titulo) async {
-  TextEditingController controller = TextEditingController();
-
-  return await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(titulo),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: "Nombre y Apellido",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Navigator.pop(context, controller.text.trim());
-              }
-            },
-            child: const Text("Continuar"),
-          ),
-        ],
-      );
-    },
-  );
-}
 
 
   Future<void> guardarFirma() async {

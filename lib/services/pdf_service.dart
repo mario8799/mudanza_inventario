@@ -60,6 +60,15 @@ class PdfService {
 
     for (int pagina = 0; pagina < paginas.length; pagina++) {
       final articulosPagina = paginas[pagina];
+      
+      // ✅ CALCULAR RANGO DE ARTÍCULOS PARA EL ENCABEZADO
+      final String desde = articulosPagina.isNotEmpty 
+          ? articulosPagina.first['correlativo'].toString() 
+          : "0";
+      final String hasta = articulosPagina.isNotEmpty 
+          ? articulosPagina.last['correlativo'].toString() 
+          : "0";
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.letter,
@@ -76,12 +85,30 @@ class PdfService {
                 // 🔹 HEADER
 
                 // Agent / Operador
+               _posCm(
+                top: headerTopCm, 
+                left: 13.2,
+                child: pw.Text(
+                    "$nombreOperador",
+                style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+
+                // ✅ ARTICLES FROM ____ TO ____
                 _posCm(
-                  top: 3.5,
-                  left: 12,
+                  top: headerTopCm - 0.79, // Ajustado para que caiga sobre la línea de "Articles from"
+                  left: 14.2,
                   child: pw.Text(
-                    nombreOperador, // ✅ usamos el parámetro directamente
-                    style: const pw.TextStyle(fontSize: 9),
+                    desde,
+                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                  ),
+                ),
+                _posCm(
+                  top: headerTopCm - 0.79, // Ajustado para que caiga sobre la línea después de "To:"
+                  left: 16.7,
+                  child: pw.Text(
+                    hasta,
+                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                   ),
                 ),
 
@@ -97,7 +124,7 @@ class PdfService {
 
                 // Código inventario
                 _posCm(
-                  top: headerTopCm - 0.8,
+                  top: headerTopCm - 0.79,
                   left: 8.5,
                   child: pw.Text(
                     " $codigoInventario",
@@ -144,7 +171,7 @@ class PdfService {
                     anchoArticle,
                   ),
 
-                // 🔹 TOTAL
+                // 🔹 TOTAL (Solo en la última página)
                 if (pagina == paginas.length - 1)
                   _posCm(
                     top: 22.23,
