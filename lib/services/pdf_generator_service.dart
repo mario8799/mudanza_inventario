@@ -157,7 +157,7 @@ final fechaInventario = inventario['fechaCreacion'] != null
  await PdfService.generarPdf(
   inventario: inventario,
   articulos: articulos,
-  tipo: "HV", // o "PROGEAR"
+  tipo: "PROGEAR", // o "PROGEAR"
   nombreArchivo: nombreArchivo,
   fechaInventario: fechaInventario,
   firmaOperador: inventario['firmaOperador'] as Uint8List?,

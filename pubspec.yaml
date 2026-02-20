@@ -62,6 +62,7 @@ flutter:
   assets:
     - assets/pdfs/normal_inventory.png
     - assets/pdfs/progear_inventory.png
+    - assets/pdfs/high_value_inventory.png
     - assets/fonts/arial.ttf
     - assets/fonts/arialbd.ttf
 

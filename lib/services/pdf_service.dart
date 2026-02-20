@@ -27,35 +27,63 @@ class PdfService {
     final pdf = pw.Document();
 
     // 🔹 Elegir plantilla
-    final templateBytes = await rootBundle.load(
-      tipo == "PROGEAR"
-          ? "assets/pdfs/progear_inventory.png"
-          : "assets/pdfs/normal_inventory.png",
-    );
+    String templatePath;
 
-    final template = pw.MemoryImage(templateBytes.buffer.asUint8List());
+if (tipo == "PROGEAR") {
+  templatePath = "assets/pdfs/progear_inventory.png";
+} else if (tipo == "HV") {
+  templatePath = "assets/pdfs/high_value_inventory.png"; // <-- tu nuevo PNG
+} else {
+  templatePath = "assets/pdfs/normal_inventory.png";
+}
+
+final templateBytes = await rootBundle.load(templatePath);
+final template = pw.MemoryImage(templateBytes.buffer.asUint8List());
+
 
     final totalArticulos = articulos.length;
 
     const double margenCm = 1.6;
     const double headerTopCm = 3;
-    const double primeraFilaTopCm = 9.7;
-    const double altoFilaCm = 0.4;
+    double primeraFilaTopCm;
+    double altoFilaCm;
 
-    const double anchoItem = 1.2;
-    const double anchoType = 1.4;
-    const double anchoArticle = 11.2;
+    double anchoItem;
+    double anchoType;
+    double anchoArticle;
+
+if (tipo == "HV") {
+  altoFilaCm = 0.5;
+} else {
+  altoFilaCm = 0.42;
+}    
+
+if (tipo == "HV") {
+  primeraFilaTopCm = 10.77; // 🔥 AJUSTA según tu template HV
+  anchoItem = 1.7;
+  anchoType = 2.0;        // ejemplo más ancho
+  anchoArticle = 2.0;    // ejemplo más angosto
+} else {
+  primeraFilaTopCm = 9.72;
+  anchoItem = 1.2;
+  anchoType = 1.4;
+  anchoArticle = 11.2;
+}
 
     // 🔹 Dividir en páginas de 30 filas
     List<List<Map<String, dynamic>>> paginas = [];
-    for (int i = 0; i < articulos.length; i += 30) {
-      paginas.add(
-        articulos.sublist(
-          i,
-          i + 30 > articulos.length ? articulos.length : i + 30,
-        ),
-      );
-    }
+    int filasPorPagina = tipo == "HV" ? 16 : 30;
+
+for (int i = 0; i < articulos.length; i += filasPorPagina) {
+  paginas.add(
+    articulos.sublist(
+      i,
+      i + filasPorPagina > articulos.length
+          ? articulos.length
+          : i + filasPorPagina,
+    ),
+  );
+}
     if (paginas.isEmpty) paginas.add([]);
 
     for (int pagina = 0; pagina < paginas.length; pagina++) {
@@ -97,7 +125,7 @@ class PdfService {
                 // ✅ ARTICLES FROM ____ TO ____
                 _posCm(
                   top: headerTopCm - 0.79, // Ajustado para que caiga sobre la línea de "Articles from"
-                  left: 14.2,
+                  left: tipo == "HV" ? 15 : 14.2,
                   child: pw.Text(
                     desde,
                     style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
@@ -105,7 +133,7 @@ class PdfService {
                 ),
                 _posCm(
                   top: headerTopCm - 0.79, // Ajustado para que caiga sobre la línea después de "To:"
-                  left: 16.7,
+                  left: tipo == "HV" ? 17 : 16.7,
                   child: pw.Text(
                     hasta,
                     style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
@@ -125,7 +153,7 @@ class PdfService {
                 // Código inventario
                 _posCm(
                   top: headerTopCm - 0.79,
-                  left: 8.5,
+                  left: tipo == "HV" ? 9.5 : 8.5,
                   child: pw.Text(
                     " $codigoInventario",
                     style: const pw.TextStyle(fontSize: 9),
@@ -135,7 +163,7 @@ class PdfService {
                 // Empresa
                 _posCm(
                   top: headerTopCm,
-                  left: margenCm,
+                  left: tipo == "HV" ? margenCm + 0.5 : margenCm,
                   child: pw.Text(
                     "Cornerstone Moving & Storage",
                     style: const pw.TextStyle(fontSize: 9),
@@ -169,10 +197,11 @@ class PdfService {
                     anchoItem,
                     anchoType,
                     anchoArticle,
+                    tipo,
                   ),
 
                 // 🔹 TOTAL (Solo en la última página)
-                if (pagina == paginas.length - 1)
+                if (pagina == paginas.length - 1 && tipo != "HV")
                   _posCm(
                     top: 22.23,
                     left: 9.5,
@@ -185,7 +214,7 @@ class PdfService {
                 // 🔹 FIRMAS y FECHAS
                 if (firmaOperador != null && firmaOperador.isNotEmpty)
                   _posCm(
-                    top: 23.5,
+                    top: tipo == "HV" ? 24 : 23.5,
                     left: 3,
                     child: pw.Image(
                       pw.MemoryImage(firmaOperador),
@@ -196,7 +225,7 @@ class PdfService {
 
                 if (firmaCliente != null)
                   _posCm(
-                    top: 25,
+                    top: tipo == "HV" ? 25.5 : 25,
                     left: 3,
                     child: pw.Image(
                       pw.MemoryImage(firmaCliente),
@@ -207,8 +236,8 @@ class PdfService {
 
                 // Fecha Operador
                 _posCm(
-                  top: 23.8,
-                  left: 8.6,
+                  top: tipo == "HV" ? 24.3 : 23.8,
+                  left: tipo == "HV" ? 8.9 : 8.6,
                   child: pw.Text(
                     DateFormat('dd/MM/yyyy').format(fechaInventario),
                     style: const pw.TextStyle(fontSize: 9),
@@ -217,8 +246,8 @@ class PdfService {
 
                 // Fecha Cliente
                 _posCm(
-                  top: 25.3,
-                  left: 8.6,
+                  top: tipo == "HV" ? 25.8 : 25.3,
+                  left: tipo == "HV" ? 8.9 : 8.6,
                   child: pw.Text(
                     DateFormat('dd/MM/yyyy').format(fechaInventario),
                     style: const pw.TextStyle(fontSize: 9),
@@ -250,57 +279,124 @@ class PdfService {
       child: child,
     );
   }
-
-  static List<pw.Widget> _buildFila(
+  static String _buildEstadoConHV(
     Map<String, dynamic> articulo,
-    double topCm,
-    double margenCm,
-    double anchoItem,
-    double anchoType,
-    double anchoArticle,
-  ) {
-    return [
-      _posCm(
-        top: topCm,
-        left: margenCm,
-        child: pw.SizedBox(
-          width: anchoItem * PdfPageFormat.cm,
+    String tipo,
+) {
+  final estado = articulo['estado']?.toString() ?? "";
+
+  // Solo mostrar etiqueta HV en NORMAL y PROGEAR
+  if (tipo != "HV" && articulo['is_high_value'] == 1) {
+    return "$estado (, HV)";
+  }
+
+  return estado;
+}
+  static List<pw.Widget> _buildFila(
+  Map<String, dynamic> articulo,
+  double topCm,
+  double margenCm,
+  double anchoItem,
+  double anchoType,
+  double anchoArticle,
+  String tipo,
+) {
+    return tipo == "HV"
+    ? [
+        // NO.
+        _posCm(
+          top: topCm,
+          left: margenCm,
           child: pw.Text(
             articulo['correlativo']?.toString() ?? "",
             style: const pw.TextStyle(fontSize: 9),
           ),
         ),
-      ),
-      _posCm(
-        top: topCm,
-        left: margenCm + anchoItem,
-        child: pw.SizedBox(
-          width: anchoType * PdfPageFormat.cm,
-          child: pw.Text(
-            articulo['tipo'] ?? "",
-            style: const pw.TextStyle(fontSize: 9),
+
+        // ARTICLE (tipo + descripcion)
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem,
+          child: pw.SizedBox(
+            width: 6 * PdfPageFormat.cm,
+            child: pw.Text(
+              "${articulo['tipo'] ?? ""} ${articulo['descripcion'] ?? ""}",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
           ),
         ),
-      ),
-      _posCm(
-        top: topCm,
-        left: margenCm + anchoItem + anchoType,
-        child: pw.SizedBox(
-          width: anchoArticle * PdfPageFormat.cm,
-          child: pw.Text(
-            articulo['descripcion'] ?? "",
-            style: const pw.TextStyle(fontSize: 9),
+
+        // DESCRIPTION (condition)
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem + 6,
+          child: pw.SizedBox(
+            width: 3 * PdfPageFormat.cm,
+            child: pw.Text(
+              articulo['estado'] ?? "",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
           ),
         ),
-      ),
-      _posCm(
-        top: topCm,
-        left: margenCm + anchoItem + anchoType + anchoArticle,
-        child: pw.Text(
-          articulo['estado'] ?? "",
-          style: const pw.TextStyle(fontSize: 9),
+
+        // SEAL NO.
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem + 9,
+          child: pw.Text(""),
         ),
-      ),
-    ];
+
+        // REMARKS
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem + 11,
+          child: pw.Text(""),
+        ),
+      ]
+    : [
+        // 👇 Layout NORMAL (el que ya tenías)
+        _posCm(
+          top: topCm,
+          left: margenCm,
+          child: pw.SizedBox(
+            width: anchoItem * PdfPageFormat.cm,
+            child: pw.Text(
+              articulo['correlativo']?.toString() ?? "",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+          ),
+        ),
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem,
+          child: pw.SizedBox(
+            width: anchoType * PdfPageFormat.cm,
+            child: pw.Text(
+              articulo['tipo'] ?? "",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+          ),
+        ),
+        _posCm(
+          top: topCm,
+          left: margenCm + anchoItem + anchoType,
+          child: pw.SizedBox(
+            width: anchoArticle * PdfPageFormat.cm,
+            child: pw.Text(
+              articulo['descripcion'] ?? "",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+          ),
+        ),
+       _posCm(
+  top: topCm,
+  left: margenCm + anchoItem + anchoType + anchoArticle,
+  child: pw.Text(
+    _buildEstadoConHV(articulo, tipo),
+    style: const pw.TextStyle(fontSize: 9),
+  ),
+),
+      ];
   }
+  
 }
