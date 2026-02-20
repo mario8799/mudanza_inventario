@@ -42,6 +42,7 @@ class DatabaseHelper {
       fechaCreacion TEXT,
       fechaActualizacion TEXT,
       fechaCierre TEXT,
+      nombreOperador TEXT,
       firmaOperador BLOB,
       firmaCliente BLOB,
       estado_sync INTEGER DEFAULT 0,

@@ -15,6 +15,7 @@ class Inventario {
   final String fechaActualizacion;
   final String? fechaCierre;
 
+  final String nombreOperador;
   final String? firmaOperador;
   final String? firmaCliente;
 
@@ -23,6 +24,7 @@ class Inventario {
   final String? fechaEliminacion;
 
   final int activo;
+
 
   Inventario({
     this.id,
@@ -42,6 +44,7 @@ class Inventario {
     this.eliminado = 0,
     this.fechaEliminacion,
     required this.activo,
+    required this.nombreOperador,
   });
 
   Map<String, dynamic> toMap() {

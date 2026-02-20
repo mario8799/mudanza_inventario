@@ -12,13 +12,14 @@ class PdfService {
     required List<Map<String, dynamic>> articulos,
     required String tipo, // "NORMAL", "HV", "PROGEAR"
     required String nombreArchivo,
+    required String nombreOperador, // ya llega como parámetro
     Uint8List? firmaOperador,
     Uint8List? firmaCliente,
     required DateTime fechaInventario,
   }) async {
 
+    // ✅ Tomamos los valores directamente
     final codigoInventario = inventario['numeroInventario']?.toString() ?? '';
-    final String nombreOperador = inventario['nombreOperador']?.toString() ?? "";
     final String nombre = inventario['nombreCliente'] ?? '';
     final String apellido = inventario['apellidoCliente'] ?? '';
     final String shipperName = "$nombre $apellido".trim();
@@ -47,7 +48,6 @@ class PdfService {
 
     // 🔹 Dividir en páginas de 30 filas
     List<List<Map<String, dynamic>>> paginas = [];
-
     for (int i = 0; i < articulos.length; i += 30) {
       paginas.add(
         articulos.sublist(
@@ -56,10 +56,7 @@ class PdfService {
         ),
       );
     }
-
-    if (paginas.isEmpty) {
-      paginas.add([]);
-    }
+    if (paginas.isEmpty) paginas.add([]);
 
     for (int pagina = 0; pagina < paginas.length; pagina++) {
       final articulosPagina = paginas[pagina];
@@ -73,68 +70,66 @@ class PdfService {
 
                 // Fondo del formulario
                 pw.Positioned.fill(
-                  child: pw.Image(
-                    template,
-                    fit: pw.BoxFit.fill,
-                  ),
+                  child: pw.Image(template, fit: pw.BoxFit.fill),
                 ),
 
                 // 🔹 HEADER
 
-// Agent
-_posCm(
-  top: 3.5,
-  left: 12,
-  child: pw.Text(
-    nombreOperador,
-    style: const pw.TextStyle(fontSize: 9),
-  ),
-),
+                // Agent / Operador
+                _posCm(
+                  top: 3.5,
+                  left: 12,
+                  child: pw.Text(
+                    nombreOperador, // ✅ usamos el parámetro directamente
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
 
-// Shipper’s Name
-_posCm(
-  top: 4.1,
-  left: 4,
-  child: pw.Text(
-    "$shipperName",
-    style: const pw.TextStyle(fontSize: 9),
-  ),
-),
+                // Shipper’s Name
+                _posCm(
+                  top: 4.1,
+                  left: 4,
+                  child: pw.Text(
+                    shipperName,
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
 
-
+                // Código inventario
                 _posCm(
                   top: headerTopCm - 0.8,
                   left: 8.5,
                   child: pw.Text(
                     " $codigoInventario",
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
 
+                // Empresa
                 _posCm(
                   top: headerTopCm,
                   left: margenCm,
                   child: pw.Text(
                     "Cornerstone Moving & Storage",
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
 
+                // Direcciones
                 _posCm(
                   top: headerTopCm + 2.1,
                   left: 4,
                   child: pw.Text(
                     inventario['direccionOrigen'] ?? "",
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
-
                 _posCm(
                   top: headerTopCm + 3.1,
                   left: 4,
                   child: pw.Text(
                     inventario['direccionDestino'] ?? "",
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
 
@@ -156,22 +151,21 @@ _posCm(
                     left: 9.5,
                     child: pw.Text(
                       totalArticulos.toString(),
-                      style: pw.TextStyle(fontSize: 9),
+                      style: const pw.TextStyle(fontSize: 9),
                     ),
                   ),
 
                 // 🔹 FIRMAS y FECHAS
                 if (firmaOperador != null && firmaOperador.isNotEmpty)
-  _posCm(
-    top: 23.5,
-    left: 3,
-    child: pw.Image(
-      pw.MemoryImage(firmaOperador),
-      width: 2 * PdfPageFormat.cm,
-      height: 1 * PdfPageFormat.cm,
-    ),
-  ),
-
+                  _posCm(
+                    top: 23.5,
+                    left: 3,
+                    child: pw.Image(
+                      pw.MemoryImage(firmaOperador),
+                      width: 2 * PdfPageFormat.cm,
+                      height: 1 * PdfPageFormat.cm,
+                    ),
+                  ),
 
                 if (firmaCliente != null)
                   _posCm(
@@ -190,7 +184,7 @@ _posCm(
                   left: 8.6,
                   child: pw.Text(
                     DateFormat('dd/MM/yyyy').format(fechaInventario),
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
 
@@ -200,7 +194,7 @@ _posCm(
                   left: 8.6,
                   child: pw.Text(
                     DateFormat('dd/MM/yyyy').format(fechaInventario),
-                    style: pw.TextStyle(fontSize: 9),
+                    style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),
               ],
@@ -246,7 +240,7 @@ _posCm(
           width: anchoItem * PdfPageFormat.cm,
           child: pw.Text(
             articulo['correlativo']?.toString() ?? "",
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         ),
       ),
@@ -257,7 +251,7 @@ _posCm(
           width: anchoType * PdfPageFormat.cm,
           child: pw.Text(
             articulo['tipo'] ?? "",
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         ),
       ),
@@ -268,7 +262,7 @@ _posCm(
           width: anchoArticle * PdfPageFormat.cm,
           child: pw.Text(
             articulo['descripcion'] ?? "",
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         ),
       ),
@@ -277,7 +271,7 @@ _posCm(
         left: margenCm + anchoItem + anchoType + anchoArticle,
         child: pw.Text(
           articulo['estado'] ?? "",
-          style: pw.TextStyle(fontSize: 9),
+          style: const pw.TextStyle(fontSize: 9),
         ),
       ),
     ];

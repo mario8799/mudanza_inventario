@@ -4,12 +4,11 @@ import '../models/inventario.dart';
 import 'inventario_screen.dart';
 import 'dart:math';
 import 'package:uuid/uuid.dart'; 
+import '../services/solicitarNombreFirma.dart';
+import '../services/pdf_service.dart'; // 🔹 Asegúrate de importar PdfService
 
 class CreateInventarioScreen extends StatefulWidget {
-  // 1. Movemos la variable aquí adentro
   final int? inventarioId; 
-
-  // 2. Insertamos TU línea aquí (reemplazando la anterior):
   const CreateInventarioScreen({super.key, this.inventarioId});
 
   @override
@@ -33,11 +32,24 @@ class _CreateInventarioScreenState extends State<CreateInventarioScreen> {
     );
   }
 
-  Future<void> guardarInventario() async {
+  Future<void> crearInventarioConOperador() async {
+    // 1️⃣ Pedir nombre del operador
+    final nombreOperador = await solicitarNombreFirma(
+      context,
+      "Ingrese nombre del Operador",
+    );
+
+    if (nombreOperador == null) return; // Canceló
+
+    // 2️⃣ Guardar inventario en DB y obtener el ID
+    await guardarInventario(nombreOperador: nombreOperador);
+  }
+
+  Future<void> guardarInventario({required String nombreOperador}) async {
     if (!_formKey.currentState!.validate()) return;
 
     final db = await DatabaseHelper.instance.database;
-    
+
     final uuidGenerator = Uuid();
     final numeroGenerado = generarNumeroInventario();
     final ahora = DateTime.now().toIso8601String();
@@ -53,12 +65,26 @@ class _CreateInventarioScreenState extends State<CreateInventarioScreen> {
       fechaCreacion: ahora,
       fechaActualizacion: ahora,
       activo: 1,
+      nombreOperador: nombreOperador,
     );
 
+    // Insertamos en la DB
     final id = await db.insert('inventarios', nuevoInventario.toMap());
 
     if (!mounted) return;
 
+    // 🔹 Opcional: Generar PDF inmediatamente y pasar nombreOperador
+    // Aquí puedes pasar cualquier lista de artículos y tipo de PDF que quieras
+    await PdfService.generarPdf(
+      inventario: nuevoInventario.toMap(),
+      articulos: [], // 🔹 Pon tus artículos reales aquí
+      tipo: "NORMAL",
+      nombreArchivo: "Inventario_$numeroGenerado.pdf",
+      nombreOperador: nombreOperador, // ✅ El operador llega aquí
+      fechaInventario: DateTime.now(),
+    );
+
+    // Navegar a la pantalla de inventario
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -106,7 +132,7 @@ class _CreateInventarioScreenState extends State<CreateInventarioScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: guardarInventario,
+                onPressed: crearInventarioConOperador, // ✅ Llama al método correcto
                 child: const Text("Crear Inventario"),
               )
             ],
