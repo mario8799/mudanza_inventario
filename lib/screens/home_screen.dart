@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
-        child: const Text("CREAR INVENTARIO"),
+        child: const Text("NEW INVENTORY"),
       ),
 
       const SizedBox(height: 20),
@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
-        child: const Text("BUSCAR INVENTARIO"),
+        child: const Text("SEARCH"),
       ),
     const SizedBox(height: 20),
 ElevatedButton(

@@ -117,7 +117,7 @@ for (int i = 0; i < articulos.length; i += filasPorPagina) {
                 top: headerTopCm, 
                 left: 13.2,
                 child: pw.Text(
-                    "$nombreOperador",
+                    nombreOperador,
                 style: const pw.TextStyle(fontSize: 9),
                   ),
                 ),

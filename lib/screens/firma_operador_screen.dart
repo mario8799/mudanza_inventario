@@ -47,9 +47,7 @@ class _FirmaOperadorScreenState extends State<FirmaOperadorScreen> {
 
     final file = File(path);
     await file.writeAsBytes(data);
-    print("Firma guardada en: $path");
-
-
+    
     final db = await DatabaseHelper.instance.database;
 
     final bytes = await File(path).readAsBytes();
