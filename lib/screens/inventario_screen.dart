@@ -5,6 +5,8 @@ import 'firma_operador_screen.dart';
 import '../models/articulo.dart';
 import '../services/printer_service.dart';
 import '../services/pdf_generator_service.dart' as Generator;
+import 'package:flutter/foundation.dart';
+import '../services/inventario_service.dart';
 
 class InventarioScreen extends StatefulWidget {
   final int inventarioId;
@@ -21,6 +23,7 @@ class InventarioScreen extends StatefulWidget {
 }
 
 class _InventarioScreenState extends State<InventarioScreen> {
+  
   List<Articulo> articulos = [];
   bool existeHighValue = false;
   bool inventarioCerrado = false;
@@ -58,6 +61,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
       });
     }
   }
+
 
   Future<void> cargarArticulos() async {
     final db = await DatabaseHelper.instance.database;
@@ -170,6 +174,34 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
     await cargarArticulos();
   }
+
+  // ================= FUNCION DE PRUEBA PARA 600 ARTICULOS (solo debug) =================
+ Future<void> generarInventarioPrueba() async {
+  // Crear 600 artículos de prueba
+  final articulosPrueba = List.generate(600, (i) {
+    return {
+      'correlativo': i + 1,
+      'tipo': 'Tipo ${i + 1}',
+      'descripcion': 'Artículo de prueba ${i + 1}',
+      'habitacion': 'Habitación ${(i % 10) + 1}',
+      'estado': 'Bueno',
+      'observaciones': '',
+      'is_high_value': (i + 1) % 20 == 0 ? 1 : 0,
+    };
+  });
+
+  final nuevoId = await InventarioService.crearInventarioConArticulos(
+    numeroInventario: 'TEST600',
+    nombreCliente: 'Cliente',
+    apellidoCliente: 'Prueba',
+    articulos: articulosPrueba,
+  );
+
+  print('Inventario creado con ID: $nuevoId');
+
+  await cargarArticulos(); // refresca la pantalla
+}
+  // ======================================================================
 
   Future<void> editarArticulo(Articulo articulo) async {
     await Navigator.push(
@@ -331,6 +363,15 @@ class _InventarioScreenState extends State<InventarioScreen> {
             label: const Text("Agregar artículo"),
           ),
           const SizedBox(height: 10),
+          if (kDebugMode)
+            ElevatedButton.icon(
+              onPressed: generarInventarioPrueba,
+              icon: const Icon(Icons.bug_report),
+              label: const Text("Generar inventario prueba 600"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+              ),
+            ),
           Expanded(
             child: ListView.builder(
               itemCount: articulos.length,
@@ -437,7 +478,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                       Icons.print,
                                       size: 18),
                                   label:
-                                      const Text("Imprimir"),
+                                      const Text("Sticker"),
                                 ),
                                 if (!inventarioCerrado) ...[
                                   const SizedBox(width: 10),

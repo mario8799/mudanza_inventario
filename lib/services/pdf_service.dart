@@ -287,7 +287,7 @@ for (int i = 0; i < articulos.length; i += filasPorPagina) {
 
   // Solo mostrar etiqueta HV en NORMAL y PROGEAR
   if (tipo != "HV" && articulo['is_high_value'] == 1) {
-    return "$estado (, HV)";
+    return "$estado, [HV]";
   }
 
   return estado;
@@ -329,7 +329,7 @@ for (int i = 0; i < articulos.length; i += filasPorPagina) {
         // DESCRIPTION (condition)
         _posCm(
           top: topCm,
-          left: margenCm + anchoItem + 6,
+          left: margenCm + anchoItem + 4,
           child: pw.SizedBox(
             width: 3 * PdfPageFormat.cm,
             child: pw.Text(
